@@ -1,0 +1,86 @@
+---
+title: "March23_Soil_CHS2_Unsterile"
+author: "Olivia Baldwin"
+date: "2024-04-26"
+output: html_document
+---
+#Import data frame: all combined data in first data frame with same metadata, then three other data frames split by day of the experiment and just include the YII and treatment. 
+```{r}
+cfdata <- read.csv("~/home/all_cf.csv")
+head(cfdata)
+
+cfday21 <- read.csv("~/home/4_12_24_CF.csv")
+head(cfday21)
+
+```
+
+#Normality Test - Y(II) (a.k.a. chlorophyll fluorescence (CF) value)
+```{r}
+shapiro.test(cfdata[cfdata$Treatment=='1', ]$YII)
+shapiro.test(cfdata[cfdata$Treatment=='2', ]$YII)
+shapiro.test(cfdata[cfdata$Treatment=='4', ]$YII)
+shapiro.test(cfdata[cfdata$Treatment=='6', ]$YII)
+```
+
+##Normality test for day 21 data only
+```{r}
+shapiro.test(cfday21[cfday21$Treatment=='1', ]$YII)
+shapiro.test(cfday21[cfday21$Treatment=='2', ]$YII)
+shapiro.test(cfday21[cfday21$Treatment=='4', ]$YII)
+shapiro.test(cfday21[cfday21$Treatment=='6', ]$YII)
+```
+
+#ANOVA performed between treatments for day 21 to check significance at end of study
+```{r}
+aov_21 <- aov(YII ~ Treatment, data = cfday21)
+summary(aov_21)
+```
+##ANOVA shows no difference by treatment group, check specifically treatment 2 (negative control/no water) against treatment 4 (no water, but with the microbes and methane)
+
+#Boxplot of CF divided by treatment and by day to see the progression of plant health.
+```{r}
+library(ggplot2)
+
+cfdata$DAY <- as.factor(cfdata$Day)
+cfdata$TREATMENT <- as.factor(cfdata$Treatment)
+ggplot(cfdata, aes(x=DAY, y=YII, color=TREATMENT)) + geom_boxplot() + theme_classic() + ggtitle("Chlorophyll Fluorescence of Four Treatment Groups Over a 21 Day Period") 
+```
+
+#Table of CF data
+```{r}
+install.packages('gt')
+```
+
+```{r}
+library('gt')
+```
+
+```{r}
+head(cfdata)
+cfdata_table <- subset(cfdata, select = -c(DAY, TREATMENT, Date))
+head(cfdata_table)
+```
+
+```{r}
+cfdata_table %>%gt() %>%
+  tab_header(title = "Chlorophyll Fluorescence Data over 21 Days") %>%
+  tab_style(style = list(cell_fill(color="lightgreen")), locations = cells_body(columns = Day, rows = Day == 0)) %>%
+  tab_style(style = list(cell_fill(color="lightyellow")), locations = cells_body(columns = Day, rows = Day == 7)) %>%
+  tab_style(style = list(cell_fill(color="orange")), locations = cells_body(columns = Day, rows = Day == 14)) %>%
+  tab_style(style = list(cell_fill(color="lightpink")), locations = cells_body(columns = Day, rows = Day == 21)) %>%
+  tab_style(style = list(cell_fill(color="darkgreen"), cell_text(color="white")), locations = cells_title()) 
+```
+
+#Boxplot of the leaf area data divided by day and treatment
+```{r}
+leafdata <- read.csv("~/home/Leaf_Area.csv")
+head(leafdata)
+```
+
+```{r}
+library(ggplot2)
+
+leafdata$TREATMENT <- as.factor(leafdata$Treatment)
+ggplot(leafdata, aes(x=TREATMENT, y=Difference, color=TREATMENT)) + geom_boxplot() + theme_classic() + ggtitle("Leaf Area Differences over 14 Days of Growth")
+```
+#The positive control (treatment 1) has the largest differences in growth of the first four plants. The negative control (treatment 2) had the lowest differences in growth of the first four plants. The treatment groups that had methane and microbes both grew less than the positive controls, but more than the negative. A higher 'n' is needed in future to confirm results. 
